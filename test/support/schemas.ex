@@ -39,30 +39,31 @@ defmodule JaSpexTest.Schemas do
 
   defmodule Image do
     use ImageBase
-    use JaSpex.Deserializer
+    use JaSpex
   end
 
   defmodule ImageOnlyName do
     use ImageBase
-    use JaSpex.Deserializer, only: [:name]
+    use JaSpex, only: [:name]
   end
 
   defmodule ImageNoExif do
     use ImageBase
-    use JaSpex.Deserializer, except: [:exif]
+    use JaSpex, except: [:exif]
   end
 
   defmodule ImageNoParseExif do
     use ImageBase
-    use JaSpex.Deserializer, no_parse_fields: [:exif]
+    use JaSpex, no_parse_fields: [:exif]
   end
 
   defmodule ImageNaiveDateTime do
     use ImageBase
-    use JaSpex.Deserializer
+    use JaSpex
 
     from_schema(schema) do
-      cast_datetime(schema, :takenAt, :naive_datetime)
+      schema
+      |> Map.update!(:takenAt, &DateTime.to_naive/1)
     end
   end
 end

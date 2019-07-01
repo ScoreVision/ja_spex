@@ -64,7 +64,7 @@ defmodule JaSpex.SchemaParserTest do
       assert get_in(data, ["exif", "creationTimestamp"])
     end
 
-    test "with from_json/2", %{schema_data: schema_data} do
+    test "with from_schema/2", %{schema_data: schema_data} do
       image = struct(Schemas.ImageNaiveDateTime, schema_data)
 
       assert %{} = data = ParamParser.parse(image)
