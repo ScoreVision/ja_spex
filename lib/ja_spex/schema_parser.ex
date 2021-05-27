@@ -20,7 +20,7 @@ defmodule JaSpex.SchemaParser do
       defmodule ImageSchema do
         require OpenApiSpex
 
-        use JaSpex, no_parse_fields: [:metadata]
+        use Jaspex.SchemaParser, no_parse_fields: [:metadata]
 
         OpenApiSpex.schema(%OpenApiSpex.Schema{
           type: :object,
@@ -33,6 +33,7 @@ defmodule JaSpex.SchemaParser do
         })
       end
   """
+  alias JaSerializer.ParamParser, as: JaParser
 
   @doc false
   # Not to be directly implemented, use the `from_schema/2` macro instead
@@ -54,6 +55,7 @@ defmodule JaSpex.SchemaParser do
     end
   end
 
+  # not sure what for
   defmacro from_schema(param, do: block) do
     quote do
       def __from_schema__(unquote(param)) do
@@ -83,35 +85,13 @@ defmodule JaSpex.SchemaParser do
             no_parse_fields: no_parse_fields
           ] do
       defimpl JaSerializer.ParamParser, for: mod do
-        alias JaSerializer.ParamParser, as: JaParser
-
         def parse(data) do
-          data
-          |> Map.delete(:__struct__)
-          |> Map.take(unquote(allowed_fields))
-          |> unquote(mod).__from_schema__()
-          |> Map.split(unquote(no_parse_fields))
-          |> parse_and_merge()
+          JaSpex.SchemaParser.parse(
+            data,
+            unquote(allowed_fields),
+            unquote(no_parse_fields)
+          )
         end
-
-        defp parse_and_merge({non_parsed_fields, to_parse_fields}) do
-          to_parse_fields
-          |> parse_value()
-          |> Map.merge(format_keys(non_parsed_fields))
-        end
-
-        defp format_keys(map) when is_map(map), do: Map.new(map, &format_key/1)
-
-        defp format_key({key, value}), do: {format_key(key), value}
-        defp format_key(key) when is_atom(key), do: format_key(to_string(key))
-        defp format_key(key) when is_binary(key), do: JaParser.Utils.format_key(key)
-
-        defp parse_pair({key, value}), do: {format_key(key), parse_value(value)}
-
-        defp parse_value(%{__struct__: _} = struct), do: JaParser.parse(struct)
-        defp parse_value(value) when is_map(value), do: Map.new(value, &parse_pair/1)
-        defp parse_value(value) when is_list(value), do: Enum.map(value, &parse_value/1)
-        defp parse_value(value), do: JaParser.parse(value)
       end
     end
   end
@@ -126,4 +106,34 @@ defmodule JaSpex.SchemaParser do
       true -> allowed
     end
   end
+
+  @doc false
+  def parse(%{__struct__: _} = data, allowed_fields, no_parse_fields) do
+    {schema, data} = Map.pop(data, :__struct__)
+
+    data
+    |> Map.take(allowed_fields)
+    |> schema.__from_schema__()
+    |> Map.split(no_parse_fields)
+    |> parse_and_merge()
+  end
+
+  defp parse_and_merge({non_parsed_fields, to_parse_fields}) do
+    to_parse_fields
+    |> parse_value()
+    |> Map.merge(format_keys(non_parsed_fields))
+  end
+
+  defp format_keys(map) when is_map(map), do: Map.new(map, &format_key/1)
+
+  defp format_key({key, value}), do: {format_key(key), value}
+  defp format_key(key) when is_atom(key), do: format_key(to_string(key))
+  defp format_key(key) when is_binary(key), do: JaParser.Utils.format_key(key)
+
+  defp parse_pair({key, value}), do: {format_key(key), parse_value(value)}
+
+  defp parse_value(%{__struct__: _} = struct), do: JaParser.parse(struct)
+  defp parse_value(value) when is_map(value), do: Map.new(value, &parse_pair/1)
+  defp parse_value(value) when is_list(value), do: Enum.map(value, &parse_value/1)
+  defp parse_value(value), do: JaParser.parse(value)
 end
