@@ -28,8 +28,8 @@ defmodule JaSpex.MixProject do
 
   defp deps do
     [
-      {:open_api_spex, "~> 3.4"},
-      {:ja_serializer, "~> 0.14"},
+      {:open_api_spex, "~> 3.16"},
+      {:ja_serializer, "~> 0.17"},
       {:jason, "~> 1.0", only: [:dev, :test]},
       {:ex_doc, "~> 0.19", only: :dev, runtime: false}
     ]
