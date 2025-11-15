@@ -32,7 +32,13 @@ defmodule JaSpex.RenderError do
   end
 
   defp render_error(error) do
-    path = error.path |> Enum.map(&to_string/1) |> Path.join()
+    path_segments = error.path |> Enum.map(&to_string/1)
+
+    path = case path_segments do
+      [] -> ""
+      segments -> Path.join(segments)
+    end
+
     pointer = "/" <> path
 
     %{
