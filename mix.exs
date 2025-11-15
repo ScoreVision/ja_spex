@@ -6,7 +6,7 @@ defmodule JaSpex.MixProject do
   def project do
     [
       app: :ja_spex,
-      version: "0.1.0",
+      version: "0.1.1",
       source_url: @github_url,
       homepage_url: @github_url,
       elixir: "~> 1.6",
